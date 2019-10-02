@@ -136,18 +136,22 @@ defmodule Goth.Token do
   def queue_for_refresh(%__MODULE__{} = token) do
     diff = token.expires - :os.system_time(:seconds)
 
-    if diff < 10 do
+    if diff < 120 do
       # just do it immediately
       Task.async(fn ->
         __MODULE__.refresh!(token)
       end)
     else
-      :timer.apply_after((diff - 10) * 1000, __MODULE__, :refresh!, [token])
+      :timer.apply_after((diff - 120) * 1000, __MODULE__, :refresh!, [token])
     end
   end
 
+  require Logger
+
   defp retrieve_and_store!({account, scope}, sub) do
+    Logger.error("Goth.Token.retrieve_and_store! scope: #{inspect(scope)}")
     {:ok, token} = Client.get_access_token({account, scope}, sub: sub)
+    Logger.error("Goth.Token.retrieve_and_store! token: #{inspect(token)}")
     TokenStore.store({account, scope}, sub, token)
     {:ok, token}
   end
