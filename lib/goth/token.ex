@@ -42,6 +42,8 @@ defmodule Goth.Token do
   alias Goth.TokenStore
   alias Goth.Client
 
+  require Logger
+
   @type t :: %__MODULE__{
           token: String.t(),
           type: String.t(),
@@ -135,6 +137,7 @@ defmodule Goth.Token do
 
   def queue_for_refresh(%__MODULE__{} = token) do
     diff = token.expires - :os.system_time(:seconds)
+    Logger.info("Goth.Token.queue_for_refresh #{inspect(token)} diff: #{inspect(diff)}")
 
     if diff < 120 do
       # just do it immediately
@@ -146,12 +149,9 @@ defmodule Goth.Token do
     end
   end
 
-  require Logger
-
   defp retrieve_and_store!({account, scope}, sub) do
-    Logger.error("Goth.Token.retrieve_and_store! scope: #{inspect(scope)}")
     {:ok, token} = Client.get_access_token({account, scope}, sub: sub)
-    Logger.error("Goth.Token.retrieve_and_store! token: #{inspect(token)}")
+    Logger.info("Goth.Token.retrieve_and_store #{inspect(scope)} #{token}")
     TokenStore.store({account, scope}, sub, token)
     {:ok, token}
   end

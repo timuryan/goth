@@ -10,11 +10,14 @@ defmodule Goth.TokenStore do
   use GenServer
   alias Goth.Token
 
+  require Logger
+
   def start_link do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
   def init(state) do
+    Logger.info("Goth.TokenStore.init")
     {:ok, state}
   end
 
@@ -63,12 +66,15 @@ defmodule Goth.TokenStore do
 
   # when we store a token, we should refresh it later
   def handle_call({:store, {account, scope, sub}, token}, _from, state) do
+    Logger.info("Goth.TokenStore.store #{inspect(scope)} #{inspect(token)}")
     # this is a race condition when inserting an expired (or about to expire) token...
     pid_or_timer = Token.queue_for_refresh(token)
     {:reply, pid_or_timer, Map.put(state, {account, scope, sub}, token)}
   end
 
   def handle_call({:find, {account, scope, sub}}, _from, state) do
+    Logger.info("Goth.TokenStore.find #{inspect(scope)}")
+
     state
     |> Map.fetch({account, scope, sub})
     |> filter_expired(:os.system_time(:seconds))
