@@ -151,7 +151,7 @@ defmodule Goth.Token do
 
   defp retrieve_and_store!({account, scope}, sub) do
     {:ok, token} = Client.get_access_token({account, scope}, sub: sub)
-    Logger.info("Goth.Token.retrieve_and_store #{inspect(scope)} #{token}")
+    Logger.info("Goth.Token.retrieve_and_store #{inspect(scope)} #{inspect(token)}")
     TokenStore.store({account, scope}, sub, token)
     {:ok, token}
   end
