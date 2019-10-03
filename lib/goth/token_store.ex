@@ -10,11 +10,14 @@ defmodule Goth.TokenStore do
   use GenServer
   alias Goth.Token
 
+  @ets_table :goth_token_store
+
   def start_link do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
   def init(state) do
+    :ets.new(@ets_table, [:named_table, :set, {:read_concurrency, true}])
     {:ok, state}
   end
 
@@ -58,12 +61,22 @@ defmodule Goth.TokenStore do
   def find(scope, sub) when is_binary(scope), do: find({:default, scope}, sub)
 
   def find({account, scope}, sub) do
-    GenServer.call(__MODULE__, {:find, {account, scope, sub}})
+    case :ets.lookup(@ets_table, {account, scope, sub}) do
+      [{{^account, ^scope, ^sub}, token}] ->
+        case {:ok, token} |> filter_expired(:os.system_time(:seconds)) do
+          :error -> GenServer.call(__MODULE__, {:find, {account, scope, sub}})
+          response -> response
+        end
+
+      _ ->
+        GenServer.call(__MODULE__, {:find, {account, scope, sub}})
+    end
   end
 
   # when we store a token, we should refresh it later
   def handle_call({:store, {account, scope, sub}, token}, _from, state) do
     # this is a race condition when inserting an expired (or about to expire) token...
+    :ets.insert(@ets_table, {account, scope, sub}, token)
     pid_or_timer = Token.queue_for_refresh(token)
     {:reply, pid_or_timer, Map.put(state, {account, scope, sub}, token)}
   end
