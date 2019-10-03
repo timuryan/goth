@@ -53,6 +53,9 @@ defmodule Goth.Token do
 
   defstruct [:token, :type, :scope, :sub, :expires, :account]
 
+  # time in seconds before token will be auto renewed
+  @timeout 120
+
   @doc """
   Get a `%Goth.Token{}` for a particular `scope`. `scope` can be a single
   scope or multiple scopes joined by a space. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/googlescopes) for all available scopes.
@@ -137,13 +140,13 @@ defmodule Goth.Token do
   def queue_for_refresh(%__MODULE__{} = token) do
     diff = token.expires - :os.system_time(:seconds)
 
-    if diff < 10 do
+    if diff < @timeout do
       # just do it immediately
       Task.async(fn ->
         __MODULE__.refresh!(token)
       end)
     else
-      :timer.apply_after((diff - 10) * 1000, __MODULE__, :refresh!, [token])
+      :timer.apply_after((diff - @timeout) * 1000, __MODULE__, :refresh!, [token])
     end
   end
 
