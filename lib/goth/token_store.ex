@@ -90,7 +90,7 @@ defmodule Goth.TokenStore do
       |> filter_expired(:os.system_time(:seconds))
       |> reply(state, {account, scope, sub})
 
-    Logger.info("Goth.TokenStore.find #{inspect(scope)} #{resp}")
+    Logger.info("Goth.TokenStore.find #{inspect(scope)} #{inspect(resp)}")
     resp
   end
 
