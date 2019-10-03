@@ -81,11 +81,20 @@ defmodule Goth.TokenStore do
     |> reply(state, {account, scope, sub})
   end
 
-  defp filter_expired(:error, _), do: :error
+  defp filter_expired(:error, _) do
+    Logger.info("Goth.TokenStore.filter_expired ERROR IN TOKEN!!!")
+
+    :error
+  end
 
   defp filter_expired({:ok, %Goth.Token{expires: expires}}, system_time)
-       when expires < system_time,
-       do: :error
+       when expires < system_time do
+    Logger.info(
+      "Goth.TokenStore.filter_expired #{inspect(expires)} #{inspect(system_time)} TOKEN IS EXPIRED!!!"
+    )
+
+    :error
+  end
 
   defp filter_expired(value, _), do: value
 
