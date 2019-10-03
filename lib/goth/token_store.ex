@@ -76,7 +76,7 @@ defmodule Goth.TokenStore do
   # when we store a token, we should refresh it later
   def handle_call({:store, {account, scope, sub}, token}, _from, state) do
     # this is a race condition when inserting an expired (or about to expire) token...
-    :ets.insert(@ets_table, {account, scope, sub}, token)
+    :ets.insert(@ets_table, {{account, scope, sub}, token})
     pid_or_timer = Token.queue_for_refresh(token)
     {:reply, pid_or_timer, Map.put(state, {account, scope, sub}, token)}
   end
