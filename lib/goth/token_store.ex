@@ -73,12 +73,14 @@ defmodule Goth.TokenStore do
   end
 
   def handle_call({:find, {account, scope, sub}}, _from, state) do
-    Logger.info("Goth.TokenStore.find #{inspect(scope)}")
+    resp =
+      state
+      |> Map.fetch({account, scope, sub})
+      |> filter_expired(:os.system_time(:seconds))
+      |> reply(state, {account, scope, sub})
 
-    state
-    |> Map.fetch({account, scope, sub})
-    |> filter_expired(:os.system_time(:seconds))
-    |> reply(state, {account, scope, sub})
+    Logger.info("Goth.TokenStore.find #{inspect(scope)} #{resp}")
+    resp
   end
 
   defp filter_expired(:error, _) do
